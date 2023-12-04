@@ -24,8 +24,8 @@ func GetFile(path string) (string, error) {
 	file, err := os.ReadFile(path)
 	if err != nil {
 		return "", err
-
 	}
+
 	return string(file), nil
 }
 
@@ -55,23 +55,20 @@ func FindIntInString(s string) (char string, ok bool) {
 		max: 5
 	*/
 	// fmt.Println(s)
-	// if all 5 letters match it does not matter which dir were heading
+	// if all letters match dont keep checking
 	char, ok = strToNum[s]
 	if ok {
-		// fmt.Println("charLuck >> ", charLuck)
 		return char, ok
 	}
 
 	char, ok = strToNum[s[0:3]]
 	if ok {
-		// fmt.Println("char3 >> ", charThree)
 		return char, ok
 	}
 
 	if len(s) >= 4 {
 		char, ok = strToNum[s[0:4]]
 		if ok {
-			// fmt.Println("char40 >> ", charFour)
 			return char, ok
 		}
 	}
