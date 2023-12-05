@@ -105,7 +105,7 @@ func CubeGame(path string) string {
 		}
 	}
 
-	fmt.Println(sum)
+	fmt.Println(sum) //2265
 
 	return "I am Cube"
 }
