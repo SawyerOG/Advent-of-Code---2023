@@ -80,19 +80,28 @@ var maxes = map[string]int{
 
 func CubeGame(path string) string {
 	sum := 0
+	power := 0
 	games := GenGames(path)
 
 	for gameID, game := range games {
 
 		winner := true
+		isFirstGame := true
+		gameSum := 0
 
 		for color, count := range game {
 
-			//if the color does not exits it loses
-			if max, ok := maxes[color]; !ok {
-				//do nothing
-				continue
+			if isFirstGame {
+				//dont multiply against zero and set
+				// the first value to multiply against
+				gameSum = count
+				isFirstGame = false
 			} else {
+				gameSum *= count
+			}
+
+			//if the color does not exits it loses
+			if max, ok := maxes[color]; ok {
 				//if the count is less than the max this game is in the running to be a winner
 				if count > max {
 					winner = false
@@ -100,12 +109,15 @@ func CubeGame(path string) string {
 			}
 		}
 
+		power += gameSum
+
 		if winner {
 			sum += gameID
 		}
 	}
 
-	fmt.Println(sum) //2265
+	fmt.Println(sum)   //2265
+	fmt.Println(power) //64097
 
 	return "I am Cube"
 }
