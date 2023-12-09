@@ -13,5 +13,5 @@ import (
 func main() {
 	// one.Trebuchet("./1/data.txt")
 	// two.CubeGame("./2/data.txt")
-	three.EngineSchema("./2/data.txt")
+	three.EngineSchema("./3/data.txt")
 }

@@ -1,7 +1,6 @@
 package three
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -38,7 +37,7 @@ func GetRows(s string) []string {
 	return strings.Split(s, " ")
 }
 
-func ConvertToGraph(s []string) Schema {
+func ConvertToGraph(s []string) *Schema {
 	/*
 		There are 3 options:
 			1. It is a symbol (not a number and not a period)
@@ -46,119 +45,120 @@ func ConvertToGraph(s []string) Schema {
 			3. It is a number (should be grouped until a non numerical char is found)
 	*/
 	schema := make(Schema, 0)
-	row := make([]string, 0)
 
-	lastFullNumber := ""
-
-	for i := 0; i < len(s); i++ {
-
-		line := strings.Split(s[i], "")
-
-		for v := 0; v < len(line); v++ {
-			val := string(line[v])
-
-			isNum, _ := IsInt(val)
-			if isNum {
-				lastFullNumber += val
-				row = append(row, ".")
-			} else {
-				if lastFullNumber != "" {
-
-					for n := len(lastFullNumber); n > 0; n-- {
-						//put the number in every slot the number took
-						row[v-n] = lastFullNumber
-					}
-
-					lastFullNumber = ""
-				}
-
-				if val == "." {
-					row = append(row, val)
-				} else {
-					//symbol
-					row = append(row, "#")
-				}
-
-			}
-		}
-		schema = append(schema, row)
-		row = nil
+	for _, v := range s {
+		y := strings.Split(v, "")
+		schema = append(schema, y)
 	}
 
-	return schema
-
+	return &schema
 }
 
-func LookAround(y, x, count, lenY int, graph Schema) bool {
-	foundSymbol := false
+var placesLooked = make(map[string]bool)
 
-	//up
-	for i := -1; i <= count+2; i++ {
-		xloc := x + i
-		if y-1 >= 0 && xloc >= 0 && xloc < lenY {
-			if graph[y-1][xloc] == "#" {
-				foundSymbol = true
-				break
-			}
+func parseNumber(s *Schema, y, x int) int {
+	g := (*s)
+	fullNum := ""
+
+	// this is where the num was found. go left until it is not a num, then right until it is not a num and
+	// keep track of the digits
+	startX := x - 1
+	leftBoundFound := false
+
+	for leftBoundFound == false {
+		if _, seen := placesLooked[strconv.Itoa(y)+","+strconv.Itoa(startX)]; seen {
+			return 0
 		}
-	}
+		placesLooked[strconv.Itoa(y)+","+strconv.Itoa(startX)] = true
 
-	if !foundSymbol {
-		//down
-		for i := -1; i <= count+2; i++ {
-			xloc := x + i
-			if y+1 >= 0 && xloc >= 0 && xloc < lenY {
-				if graph[y+1][xloc] == "#" {
-					foundSymbol = true
-					break
-				}
-			}
+		if startX < 0 {
+			//the number is at the start of the line
+			leftBoundFound = true
+			startX = 0
+			break
 		}
-	}
 
-	//left
-	if !foundSymbol {
-		if x-1 >= 0 && graph[y][x-1] == "#" {
-			foundSymbol = true
-		}
-	}
-
-	//right
-	if !foundSymbol {
-		if x+1 <= len(graph[y]) && graph[y][x+1] == "#" {
-			foundSymbol = true
-		}
-	}
-
-	return foundSymbol
-}
-
-func CheckRow(y int, graph Schema) int {
-	sum := 0
-	fmt.Println(graph[y])
-	lenY := len(graph[y])
-	for x := 0; x < lenY-1; {
-		isNum, num := IsInt(graph[y][x])
-		if isNum {
-
-			fmt.Println("is num >> ", num)
-
-			lengthOfNum := len(graph[y][x])
-			//find the symbol
-			isPart := LookAround(y, x, lengthOfNum, lenY, graph)
-
-			if isPart {
-				fmt.Println("is part!", num)
-				sum += num
-
-				//skip ahead past the num
-				x = x + lengthOfNum
-			} else {
-				x = x + 1
-			}
-
+		isNum, _ := IsInt(g[y][startX])
+		if !isNum {
+			//the last value was the first digit
+			leftBoundFound = true
+			startX += 1
+			break
 		} else {
-			x = x + 1
+			startX--
+		}
+	}
+
+	for i := startX; i < len(g[y]); i++ {
+		isNum, _ := IsInt(g[y][i])
+		if isNum {
+			fullNum += g[y][i]
+		} else {
+			break
+		}
+	}
+
+	_, num := IsInt(fullNum)
+	return num
+}
+
+var dirs = []struct{ y, x int }{
+	//left
+	{0, -1},
+	//top left
+	{-1, -1},
+	//top
+	{-1, 0},
+	//top right
+	{-1, 1},
+	//right
+	{0, 1},
+	//bottom right
+	{1, 1},
+	//bottom
+	{1, 0},
+	//bottom left
+	{1, -1},
+}
+
+func findParts(s *Schema, y, x int) int {
+	g := (*s)
+	sum := 0
+
+	// fmt.Println("find")
+	// fmt.Println(g[y][x])
+
+	for _, dir := range dirs {
+		if y+dir.y >= 0 && y+dir.y < len(g) && x+dir.x >= 0 && x+dir.x < len(g[y]) {
+			isNum, _ := IsInt(g[y+dir.y][x+dir.x])
+			if isNum {
+				// fmt.Println("num")
+				// fmt.Println(g[y+dir.y][x+dir.x])
+				val := parseNumber(s, y+dir.y, x+dir.x)
+				sum += val
+			}
+		}
+	}
+
+	return sum
+}
+
+func findSymbols(s *Schema) int {
+	g := (*s)
+	sum := 0
+
+	for y := 0; y < len(g); y++ {
+		for x := 0; x < len(g[y]); x++ {
+
+			val := g[y][x]
+			isNum, _ := IsInt(val)
+
+			if val != "." && isNum == false {
+				// fmt.Println("val: ", val)
+				foundParts := findParts(s, y, x)
+				sum += foundParts
+			}
+
 		}
 	}
 
@@ -171,12 +171,7 @@ func EngineSchema(path string) int {
 	flatArray := GetFlatArray(fileData)
 	graph := ConvertToGraph(flatArray)
 
-	sum := 0
-	for y := 0; y < len(graph); y++ {
-		s := CheckRow(y, graph)
-		sum += s
-	}
+	sum := findSymbols(graph)
 
-	fmt.Println(sum)
-	return sum
+	return sum //546312
 }
