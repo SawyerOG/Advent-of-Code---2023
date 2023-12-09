@@ -1,6 +1,7 @@
 package three
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -123,10 +124,8 @@ var dirs = []struct{ y, x int }{
 
 func findParts(s *Schema, y, x int) int {
 	g := (*s)
-	sum := 0
-
-	// fmt.Println("find")
-	// fmt.Println(g[y][x])
+	partOne := 0
+	partTwo := 0
 
 	for _, dir := range dirs {
 		if y+dir.y >= 0 && y+dir.y < len(g) && x+dir.x >= 0 && x+dir.x < len(g[y]) {
@@ -135,12 +134,35 @@ func findParts(s *Schema, y, x int) int {
 				// fmt.Println("num")
 				// fmt.Println(g[y+dir.y][x+dir.x])
 				val := parseNumber(s, y+dir.y, x+dir.x)
-				sum += val
+				// fmt.Println("val: ", val)
+
+				if val > 0 {
+					//only want those items with 2 parts
+					if partOne != 0 && partTwo != 0 {
+						//this gear exceeds the criteria (2 parts)
+						partOne = 0
+						partTwo = 0
+						break
+					}
+					if partOne == 0 {
+						partOne = val
+					} else {
+						partTwo = val
+					}
+				}
 			}
 		}
 	}
 
-	return sum
+	// if both parts multiply them and return the valu
+
+	// fmt.Printf("partOne: %d, partTwo: %d\n", partOne, partTwo)
+	if partOne > 0 && partTwo > 0 {
+		return partOne * partTwo
+	}
+
+	// bad gear
+	return 0
 }
 
 func findSymbols(s *Schema) int {
@@ -151,11 +173,14 @@ func findSymbols(s *Schema) int {
 		for x := 0; x < len(g[y]); x++ {
 
 			val := g[y][x]
-			isNum, _ := IsInt(val)
+			// fmt.Println(val)
+			// isNum, _ := IsInt(val)
 
-			if val != "." && isNum == false {
+			// if val != "." && isNum == false {
+			if val == "*" {
 				// fmt.Println("val: ", val)
 				foundParts := findParts(s, y, x)
+				// fmt.Println("foundParts: ", foundParts)
 				sum += foundParts
 			}
 
@@ -173,5 +198,6 @@ func EngineSchema(path string) int {
 
 	sum := findSymbols(graph)
 
-	return sum //546312
+	fmt.Println("total: ", sum) //part two :87449461
+	return sum                  //546312
 }
