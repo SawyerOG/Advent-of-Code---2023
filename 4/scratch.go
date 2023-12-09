@@ -54,17 +54,17 @@ func Score(val int) int {
 	return sum
 }
 
-func DetermineWins(game *[][]string) int {
+func DetermineWins(game [][]string) int {
 	ourNums := make(map[string]bool)
 	foundNums := 0
 	// fmt.Println("game", game)
 
-	for _, num := range (*game)[0] {
+	for _, num := range (game)[0] {
 		ourNums[num] = true
 	}
 	// fmt.Println("ourNums", ourNums)
 
-	for _, num := range (*game)[1] {
+	for _, num := range (game)[1] {
 		if num != "" {
 
 			if _, ok := ourNums[num]; ok {
@@ -76,6 +76,10 @@ func DetermineWins(game *[][]string) int {
 				delete(ourNums, num)
 			}
 		}
+
+		if len(ourNums) == 0 {
+			break
+		}
 	}
 
 	if foundNums == 0 {
@@ -83,17 +87,62 @@ func DetermineWins(game *[][]string) int {
 	}
 
 	fmt.Println("foundNums", foundNums)
-	return Score(foundNums)
+	// return Score(foundNums) //part one scoring
+	return foundNums //part two scoring
+}
+
+func ScoreTwo(gameNum int, game *[][]string) int {
+	//for each win, games[x + 1 + win]) are played again
+
+	fmt.Println("gameNum", gameNum)
+	// fmt.Println("game", game)
+	return 0
 }
 
 func Scratch(path string) int {
 	sum := 0
 	game := GetGames(path)
-	for _, g := range *game {
-		sum += DetermineWins(&g)
+	gameRef := *game
+
+	gameScores := make(map[int]int)
+	timesGamePlayed := make(map[int]int)
+
+	// for k, g := range *game {
+	for k := 1; k <= len(gameRef); k++ {
+
+		wins := DetermineWins(gameRef[k])
+		//track the score for this game
+		gameScores[k] = wins
+		timesGamePlayed[k] = 1
+	}
+
+	for k := 1; k <= len(gameRef); k++ {
+		// for game, score := range gameScores {
+		//if on game 10 and get 6 wins that means we get a copy of game 11 - 17
+		//i think as long as those games exist
+		game := k
+		score := gameScores[k]
+
+		start := game + 1
+		end := game + score
+
+		for i := start; i <= end; i++ {
+			if _, ok := timesGamePlayed[i]; ok {
+				for j := 0; j < timesGamePlayed[game]; j++ {
+					timesGamePlayed[i]++
+				}
+			}
+		}
+
+	}
+
+	for _, timesPlayed := range timesGamePlayed {
+		sum += timesPlayed
 	}
 
 	fmt.Println("sum", sum)
+	// fmt.Println("gameScores", gameScores)
+	// fmt.Println("timesGamePlayed", timesGamePlayed)
 
-	return sum //26346
+	return sum //26346 //8467762
 }
